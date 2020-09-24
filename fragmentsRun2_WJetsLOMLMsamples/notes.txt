@@ -1,0 +1,87 @@
+
+### --- Notes ---
+
+# Currently running on the following LHE-tier dataset:
+/WJetsToLNu_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIIWinter15wmLHE-MCRUN2_71_V1_ext1-v1/LHE
+
+# Running an edmDumpEventContent on this dataset gives --
+Type                Module                  Label     Process   
+----------------------------------------------------------------
+LHEEventProduct     "externalLHEProducer"   ""        "LHE" 
+
+# The W+Jets LO MLM MiniAOD datasets (listed below) do not have an associated LHE-tier file to run on, since the LHE and GEN-SIM production steps were done in sequence at once. (If the request is "LHEGS", it means that the LHE (gridpacks) and the GEN-SIM (hadronization+etc.) were done in the same step.) 
+# But I think that I can actually run the Pythia8HadronizerFilter on these MiniAOD files, and CMSSW will automatically know to pick up the LHEEventProduct collection inside these files by default (but I'm really not sure if it's this simple, or I need to specify the LHEEventProduct collection as input explicitly somehow).
+# Anyway, for now, I will just run on the 2015 LHE-tier file I list above, as this parton-level calculation should be the same for all of the corresponding W+Jets LO MLM samples for 2016, 2017, 2018.
+
+===
+
+## Retrieving from McM, the W+jets Madgraph LO MLM samples (MiniAOD) for Run 2 and their corresponding CMSSW fragments --
+## Further, I've edited down these fragments to just include the GEN part, for use with cmsDriver.py (below).
+
+2016: 
+/WJetsToLNu_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISummer16MiniAODv3-PUMoriond17_94X_mcRun2_asymptotic_v3_ext2-v2/MINIAODSIM
+	fragment:
+	https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get_fragment/HIG-RunIISummer15wmLHEGS-00804/0
+
+2017: 
+/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v3/MINIAODSIM
+	fragment:
+	https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get_fragment/BTV-RunIIFall17wmLHEGS-00005/0
+
+2018: 
+/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v2/MINIAODSIM
+	fragment:
+	https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get_fragment/HIG-RunIIFall18wmLHEGS-00394/0
+
+===
+
+## -- CMSSW cfg file generation using cmsDriver.py --
+# cmsDriver.py should be used to create the proper CMSSW cfg files for your CMSSW release
+# It takes a "fragment" .py file as input
+
+# To run cmsDriver on my gen fragments to get CMSSW cfg files, I consulted following links:
+https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookGenIntro
+https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideCmsDriver
+https://twiki.cern.ch/twiki/bin/viewauth/CMS/Rivet
+
+## Setup --
+cmsrel CMSSW_10_2_20_UL
+cd CMSSW_10_2_20_UL/src
+cmsenv
+scram b -j 8
+
+mkdir -p Configuration/GenProduction/python/
+
+# Copy the cfg fragments into working area:
+cp ../../fragment*-GENonly.py ./Configuration/GenProduction/python/
+
+# Need to grab the Rivet customization file first:
+curl -s https://raw.githubusercontent.com/cms-sw/genproductions/master/python/rivet_customize.py -o Configuration/GenProduction/rivet_customize.py
+
+# Compile again
+scram b -j 8
+
+## Then run cmsDriver.py on your fragment to get the full CMSSW cfg file --
+
+Template:
+cmsDriver.py <path/to/fragment.py> -s GEN --conditions=auto:mc --eventcontent=RAWSIM --datatier=GEN-SIM-RAW --python_filename=<name-of-output-CMSSW-cfg>.py -n 100000 --mc --no_exec --customise=<path/to/rivet_customize.py>
+==> might be --datatier GEN-SIM instead?
+
+NOTE: running the below commands it first gave me an error about not finding the Rivet process line, but after moving rivet_customize.py around and re-scram'ing it seemed to work
+
+2016:
+cmsDriver.py Configuration/GenProduction/python/fragment2016-GENonly.py -s GEN --conditions=auto:mc --eventcontent=RAWSIM --datatier=GEN-SIM-RAW --python_filename=runPythia8AndRivetAnalysis_WJetsLOMLM_2016.py -n 100000 --mc --no_exec --customise=Configuration/GenProduction/rivet_customize.py
+
+2017:
+cmsDriver.py Configuration/GenProduction/python/fragment2017-GENonly.py -s GEN --conditions=auto:mc --eventcontent=RAWSIM --datatier=GEN-SIM-RAW --python_filename=runPythia8AndRivetAnalysis_WJetsLOMLM_2017.py -n 100000 --mc --no_exec --customise=Configuration/GenProduction/rivet_customize.py
+
+2018:
+cmsDriver.py Configuration/GenProduction/python/fragment2018-GENonly.py -s GEN --conditions=auto:mc --eventcontent=RAWSIM --datatier=GEN-SIM-RAW --python_filename=runPythia8AndRivetAnalysis_WJetsLOMLM_2018.py -n 100000 --mc --no_exec --customise=Configuration/GenProduction/rivet_customize.py
+
+## Then to enable the Rivet analysis plugin,  add these two lines to the bottom (?) of the generated CMSSW cfg file --
+process.rivetAnalyzer.AnalysisNames = cms.vstring('CMS_SMP_WJetsAlphaS_Run2_NPCorrections') 
+process.rivetAnalyzer.OutputFile = cms.string('wjets13tev_hadmpiON.yoda')
+
+# Note: I did not only add these two above lines ^^, but rather had to compare with the old 2015 config file to make sure the formatting was correct
+
+

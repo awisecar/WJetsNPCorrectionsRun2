@@ -11,14 +11,17 @@ The LHEEventProduct should contain only parton-level information, so it should b
 
 Instructions for running locally in-shell, as well as submissions using CRAB, are given below. The output files are in the YODA format, so all of the associated Rivet-YODA tools should be sufficient for making plots/deriving corrections/etc. (For possible future use, the files in "forTurningFSROff" can be used for looking at effects of turning final state radiation (FSR) off.
 
+## NOTE:
+For the full Run 2 analysis, I will import my Rivet analysis used for FastNLO tables to here. This compiles with Rivet v2.5.4 and gcc v4.8.1. We can either try CMSSW_9_4_14_UL_patch1 (slc7_amd64_gcc630) or CMSSW_10_2_20_UL (slc7_amd64_gcc700), which both have Rivet v2.5.4.
+
 
 ## -- Setup
 mkdir NonPerturbativeCorrections
 cd NonPerturbativeCorrections
 git clone git@github.com:awisecar/WJetsNPCorrectionsRun2.git
 cd WJetsNPCorrectionsRun2
-cmsrel CMSSW_8_0_34_UL
-cd CMSSW_8_0_34_UL/src
+cmsrel CMSSW_10_2_20_UL
+cd CMSSW_10_2_20_UL/src
 cmsenv
 git cms-addpkg GeneratorInterface/RivetInterface
 scram b -j 8
@@ -31,16 +34,25 @@ scram b -j 8
 - can find the cmsDriver.py command to do this in Apichart's README
 
 ## Move CMSSW cfg files, CRAB cfg files inside CMSSW area; move Rivet analysis file into appropriate folder
-mv runPythia8AndRivetAnalysis_WJetsLOMLM*.py ./CMSSW_8_0_34_UL/src
-mv crab_*.py ./CMSSW_8_0_34_UL/src
-mv CMS_SMP_WJetsAlphaS_Run2_NPCorrections.cc ./CMSSW_8_0_34_UL/src/GeneratorInterface/RivetInterface/src
+mv runPythia8AndRivetAnalysis_WJetsLOMLM*.py ./CMSSW_10_2_20_UL/src
+mv crab_*.py ./CMSSW_10_2_20_UL/src
+mv CMS_SMP_WJetsAlphaS_Run2_NPCorrections.cc ./CMSSW_10_2_20_UL/src/GeneratorInterface/RivetInterface/src
 >>> NOTE: need to update Rivet analysis with all relevant AK4, AK8 distributions for ratios
+
+# ^^^ Have to do the following for Rivet analysis
+# Move your main Rivet analysis file (.cc file) in GeneratorInterface/RivetInterface/src/
+# and the other analysis files (.info, .plot, .yoda) to the GeneratorInterface/RivetInterface/data/ sub-directory
+# Then compile using 'scram b -j 8'
+# Check that your analysis is then available with 'rivet --list-analyses'
+
+
+
 
 
 ## -- Run code
 
 ## Option 1: Test locally
-cd ./CMSSW_8_0_34_UL/src
+cd ./CMSSW_10_2_20_UL/src
 cmsenv
 cmsvoms
 scram b -j 8
@@ -56,7 +68,7 @@ rivet-mkhtml <output-file-name>.yoda
 ## /eos/cms/store/user/awisecar/NPCorrections2016_MadgraphLO
 
 ## Then to run jobs --
-cd ./CMSSW_8_0_34_UL/src
+cd ./CMSSW_10_2_20_UL/src
 cmsenv
 cmsvoms
 sourcecrab
@@ -71,6 +83,17 @@ crab status -d crab_2016_WJetsLOMLM_NonPertON
 crab status -d crab_2016_WJetsLOMLM_NonPertOFF
 
 ## Then copy Yoda files to local directory, merge using runMergeYodaCrabDir.py utility (NOT YET TESTED!!!)
-## Then convert to ROOT file using the yoda2aida, then aida2root utilities, then you have the ROOT files you need to take ratios for the corrections
+
+## Convert YODA file to ROOT file to derive NP corrections
+-- try --
+yoda2aida output.yoda
+aida2root output.aida
+-- or ---
+yoda2root output.yoda
+
+
+
+
+
 
 

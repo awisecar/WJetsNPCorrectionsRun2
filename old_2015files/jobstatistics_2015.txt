@@ -1,0 +1,36 @@
+# these numbers are from running jobs based on the files from the 2015 analysis
+
+so far all jobs ran at --
+T2_FR_GRIF_IRFU
+T2_FR_GRIF_LLR
+
+
+=====> job statistics for crab_2015_WJetsLOMLM_NonPertON <=====
+
+Jobs status:                    failed       		  0.9% (  3/320)
+				finished     		 98.4% (315/320)
+				running      		  0.6% (  2/320)
+
+  3 jobs failed with exit code 50664
+
+Summary of run jobs:
+ * Memory: 1343MB min, 3084MB max, 1600MB ave
+ * Runtime: 5:37:18 min, 20:00:26 max, 10:45:35 ave
+ * CPU eff: 19% min, 99% max, 94% ave
+ * Waste: 70:41:59 (2% of total)
+
+
+=====> job statistics for crab_2015_WJetsLOMLM_NonPertOFF <=====
+
+Jobs status:                    failed       		  0.6% (  2/320)
+				finished     		 99.4% (318/320)
+
+  1 jobs failed with exit code 8028
+
+Summary of run jobs:
+ * Memory: 1551MB min, 1748MB max, 1537MB ave
+ * Runtime: 0:27:50 min, 3:21:03 max, 1:28:25 ave
+ * CPU eff: 60% min, 98% max, 91% ave
+ * Waste: 7:20:38 (2% of total)
+
+

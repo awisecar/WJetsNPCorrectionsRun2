@@ -1,0 +1,16 @@
+Name: CMS_SMP_WJetsAlphaS_Run2_NPCorrections
+Year: 2020
+Summary: Extraction of the QCD coupling constant from ratios of differential cross sections of the associated production of a W boson and jets in proton-proton collisions at sqrt(s) = 13 TeV using CMS Run 2 data
+Experiment: CMS
+Collider: LHC
+SpiresID:
+Status: VALIDATED
+Authors:
+ - Andrew Wisecarver               -
+ - andrew.lloyd.wisecarver@cern.ch -
+References:
+RunInfo: 13 TeV $pp \to W+jets$.
+Beams: [p+, p+]
+Energies: [13000]
+Description:
+  ''

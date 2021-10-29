@@ -33,11 +33,11 @@ scram b -j 8
 ## the CMSSW cfg files, see notes.txt in the fragmentsRun2_WJetsLOMLMsamples folder
 
 ## Move CMSSW cfg files, CRAB cfg files inside CMSSW area
+cd ../..
 mv runPythia8AndRivetAnalysis_WJetsLOMLM*.py ./CMSSW_10_2_20_UL/src
 mv crab_RunPythiaAndRivet_WJetsLOMLM_*.py    ./CMSSW_10_2_20_UL/src
 
-## Move Rivet analysis files into appropriate folders
-## First the .cc file; then the others (.info, .plot, .yoda)
+## Move Rivet analysis files into appropriate folders (first the .cc file; then the others: .info, .plot, .yoda)
 mv CMS_SMP_WJetsAlphaS_Run2_NPCorrections.cc ./CMSSW_10_2_20_UL/src/GeneratorInterface/RivetInterface/src
 mv CMS_SMP_WJetsAlphaS_Run2_NPCorrections.*  ./CMSSW_10_2_20_UL/src/GeneratorInterface/RivetInterface/data
 cd CMSSW_10_2_20_UL/src
@@ -54,14 +54,13 @@ cmsenv
 cmsvoms
 scram b -j 8
 cmsRun runPythia8AndRivetAnalysis_WJetsLOMLM_2016.py
- -- or -- 
 cmsRun runPythia8AndRivetAnalysis_WJetsLOMLM_HadMpiOFF_2016.py
-then
-rivet-mkhtml --outputdir=<output-dir-name> --mc-errs <output-file-1>.yoda <output-file-2>.yoda 
+rivet-mkhtml --outputdir=NPcorr2016_test --mc-errs wjets13tev_hadmpiOFF.yoda wjets13tev_hadmpiON.yoda
+^^^ broken in my current version of CMSSW...
 
 ## ========== Option 2: Run in CRAB ===========
 ## Note: First make sure you make an output directory listed in the CRAB cfg file for job output on EOS, such as,
-## /eos/cms/store/user/awisecar/NPCorrections2016_MadgraphLO
+## /eos/cms/store/user/awisecar/NPCorrections_WJetsRun2/
 
 ## Then to run jobs --
 cd ./CMSSW_10_2_20_UL/src
@@ -78,13 +77,48 @@ crab submit -c crab_RunPythiaAndRivet_WJetsLOMLM_HadMpiOFF_2016.py
 crab status -d crab_2016_WJetsLOMLM_NonPertON
 crab status -d crab_2016_WJetsLOMLM_NonPertOFF
 
-## Then copy Yoda files to local directory, merge using runMergeYodaCrabDir.py utility (NOT YET TESTED!!!)
 
-## Convert YODA file to ROOT file to derive NP corrections
--- try --
-yoda2aida output.yoda
-aida2root output.aida
--- or ---
-yoda2root output.yoda
 
+## -- Analysis
+
+## NOTE: Yoda and Rivet tools break in CMSSW_10_2_20_UL, work using CMSSW_9_4_14_UL_patch1
+## This includes at least yodamerge, rivet-mkhtml, yoda2root
+
+# Set up environment
+cd analysis
+cmsrel CMSSW_9_4_14_UL_patch1
+cd CMSSW_9_4_14_UL_patch1/src
+cmsenv
+cd ../..
+
+## Copy output from CRAB jobs into local directory, and merge all of the output Yoda files into one
+# In order to merge all of the files in a directory, use the following script:
+./runMergeYodaHistos.py <year> <ON-or-OFF>
+# - or to run merging by hand with just a few files - 
+./mergeyodahistos -o <output-merged-file.yoda> <input-file-1.yoda> <input-file-2.yoda>
+# NOTE: have to make sure the files I'm merging are of roughling the same event count in order for the arithmetic inside the script to work correctly (?)
+# NOTE: I think that for the merging heuristic to work properly, you have to merge runs that had the same number of events generated, because when it reapplies the normalization to the final merged histogram, I think it simply takes the average of the cross sections from each of the runs that were used to normalize each of those individual histograms
+
+# After doing this for both Had+MPI On and Had+MPI Off, make plots with
+./makerivetplots -o <output-dir> --pwd --no-rivet-refs --verbose --no-subproc --font=cm --no-plottitle <input-file-1.yoda> <input-file-2.yoda>
+e.g.
+./makerivetplots -o NPcorr_2016_rivetplots --pwd --no-rivet-refs --verbose --no-subproc --font=cm --no-plottitle wjets13tev_2016_hadmpiOFF_MERGED.yoda wjets13tev_2016_hadmpiON_MERGED.yoda
+./makerivetplots -o NPcorr_2017_rivetplots --pwd --no-rivet-refs --verbose --no-subproc --font=cm --no-plottitle wjets13tev_2017_hadmpiOFF_MERGED.yoda wjets13tev_2017_hadmpiON_MERGED.yoda
+# or just go with the more basic command:
+rivet-mkhtml --outputdir=NPcorr_<year> --mc-errs wjets13tev_hadmpiOFF_MERGED.yoda wjets13tev_hadmpiON_MERGED.yoda
+e.g.
+rivet-mkhtml --outputdir=NPcorr_2016_testplots --mc-errs wjets13tev_2016_hadmpiOFF_MERGED.yoda wjets13tev_2016_hadmpiON_MERGED.yoda
+rivet-mkhtml --outputdir=NPcorr_2017_testplots --mc-errs wjets13tev_2017_hadmpiOFF_MERGED.yoda wjets13tev_2017_hadmpiON_MERGED.yoda
+
+# NOTE: if the above plotting scripts don't work on lxplus, try copying YODA files over to Tier3 machine and running commands there
+
+
+# Can additionally make plots with the plotNPCorr.py script
+# TO-DO!
+
+
+
+
+# NOTE: to convert YODA file to ROOT format, do --
+yoda2root <input-file.yoda>
 

@@ -1,0 +1,56 @@
+ === find the W+Jets NLO FxFx fragments used to produce my samples ===
+
+the CMSSW cfg files we use for the NP analysis so far use LO MLM matching
+we need to do new cfg files for NLO FxFx matching
+
+note: if the request is LHEGS, it means that the LHE and the GEN-SIM were done in the same step
+- both gridpacks and hadronization in the associated CMSSW fragment (that is then taken by the cmsDriver.py script to make a full CMSSW cfg file)
+
+——> get fragments for W+jets NLO FxFx inclusive samples <——
+
+---------------------------------------
+ -- Go to McM to find the fragments --
+https://cms-pdmv.cern.ch/mcm/
+Go to Request, click Output Dataset, enter in full dataset name and search
+Click "View Chains"
+Click the first link on the left under the "Chain" tab (should be the "LHEGS" PrepId)
+Go to the "Fragment" tab, click for the CMSSW fragment, gridpack will be listed in the externalLHEProducer module
+---------------------------------------
+
+ == 2016 ==
+/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISummer16MiniAODv3-PUMoriond17_94X_mcRun2_asymptotic_v3_ext2-v1/MINIAODSIM
+	fragments:
+	https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get_fragment/SMP-RunIIWinter15wmLHE-00072/0
+	https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get_fragment/SMP-RunIISummer15GS-00054/0
+
+ == 2017/2018 ==
+/WJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1/MINIAODSIM
+	fragment:
+	https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get_fragment/SMP-RunIIFall17wmLHEGS-00242/0
+
+===================================
+
+## -- CMSSW cfg file generation using cmsDriver.py --
+
+## Setup --
+cmsrel CMSSW_10_2_20_UL
+cd CMSSW_10_2_20_UL/src
+cmsenv
+scram b -j 8
+
+mkdir -p Configuration/GenProduction/python/
+
+# Copy the cfg fragments into working area:
+cp ../../fragment*_GENonly.py ./Configuration/GenProduction/python/
+
+# Compile again
+scram b -j 8
+
+## Then run cmsDriver.py on your fragment to get the full CMSSW cfg file --
+
+2016:
+cmsDriver.py Configuration/GenProduction/python/fragment2016_GENonly.py -s GEN --conditions=auto:mc --eventcontent=RAWSIM --datatier=GEN-SIM-RAW --python_filename=runPythia8_WJetsNLOFXFX_2016.py -n 100000 --mc --no_exec
+
+2017:
+cmsDriver.py Configuration/GenProduction/python/fragment2017_GENonly.py -s GEN --conditions=auto:mc --eventcontent=RAWSIM --datatier=GEN-SIM-RAW --python_filename=runPythia8_WJetsNLOFXFX_2017.py -n 100000 --mc --no_exec
+
